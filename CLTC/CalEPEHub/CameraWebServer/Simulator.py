@@ -4,7 +4,7 @@ import math
 import threading
 import time
 
-from .MqttBroker import MqttBroker
+from MqttBroker import MqttBroker
 
 CELL_SIZE = 3.0 # ft
 

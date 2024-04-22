@@ -1,6 +1,6 @@
 # Created by Kyle Pickle for use with the CLTC's CalEPEHub project
 
-from . import flask_app
+import flask_app
 
 import threading
 

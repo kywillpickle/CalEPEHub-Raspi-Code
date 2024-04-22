@@ -2,8 +2,8 @@
 
 import time
 from flask import Flask, jsonify, render_template, Response, request
-from .Simulator import Simulator
-from .Stream import Stream
+from Simulator import Simulator
+from Stream import Stream
 
 app = Flask(__name__)
 @app.route('/')
