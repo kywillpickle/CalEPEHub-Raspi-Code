@@ -1,9 +1,6 @@
 # Created by Kyle Pickle for use with the CLTC's CalEPEHub project
 
-from CLTC.CalEPEHub.CameraWebServer import flask_app
-from CLTC.CalEPEHub.CameraWebServer.Simulator import Simulator
-from CLTC.CalEPEHub.CameraWebServer.Stream import Stream
-from CLTC.CalEPEHub.CameraWebServer.MqttBroker import MqttBroker
+from . import flask_app
 
 import threading
 
