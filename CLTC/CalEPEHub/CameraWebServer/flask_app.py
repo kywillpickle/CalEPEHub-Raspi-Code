@@ -12,7 +12,7 @@ def index():
 
 def gen_frame(inst: Stream):
     while True:
-        time.sleep(0)
+        time.sleep(0.02)
         yield (b'--frame\r\n'
                 b'Content-Type: image/jpeg\r\n\r\n' + inst.get_frame() + b'\r\n')
 
