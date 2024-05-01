@@ -5,6 +5,8 @@ from flask import Flask, jsonify, render_template, Response, request
 from Simulator import Simulator
 from Stream import Stream
 
+HOSTNAME = "camera-calepehub.local"
+
 app = Flask(__name__)
 @app.route('/')
 def index():
@@ -40,4 +42,4 @@ def start_test():
         return jsonify({'error': 'Invalid data provided'}), 400
     
 def run_flask():
-    app.run(host='0.0.0.0', debug=False, threaded=True)
+    app.run(host=HOSTNAME, debug=False, threaded=True)

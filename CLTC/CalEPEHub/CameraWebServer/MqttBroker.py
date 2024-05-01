@@ -8,8 +8,8 @@ class MqttBroker(object):
 
     broker_address = 'localhost' # The address of the (local) MQTT broker
     broker_port = 1883           # The port of said MQTT broker
-    status_messages = []         # List of all previous status messages
-    client = None                # The client used to connect to the MQTT broker
+    client: mqtt.Client = None   # The client used to connect to the MQTT broker
+    _callbacks = {}              # Dict of topics and their associated callbacks
 
     def __init__(self):
         raise NotImplementedError()
@@ -18,8 +18,7 @@ class MqttBroker(object):
         mqtt_broker = object.__new__(cls)
         mqtt_broker.client = mqtt.Client("camera_control")
         mqtt_broker.client.connect(mqtt_broker.broker_address, mqtt_broker.broker_port)
-        mqtt_broker.client.subscribe("test/status")
-        mqtt_broker.client.on_message = mqtt_broker.on_message
+        mqtt_broker.client.on_message = lambda client, userdata, msg: mqtt_broker.on_message(client, userdata, msg)
 
         return mqtt_broker
 
@@ -32,32 +31,21 @@ class MqttBroker(object):
             if(cls._inst == None): cls._inst = cls.__new__(cls)
         return cls._inst
     
+    def subscribe_to_topic(self, topic: str, funct):
+        self.client.subscribe(topic)
+        self._callbacks[topic] = funct
+
     def run(self):
         self.client.loop_forever()
-
-    # def start_test(self, grid_size, step_time, num_trials, pattern):
-    #     params = {
-    #         "grid_size": grid_size,
-    #         "step_time": step_time,
-    #         "num_trials": num_trials,
-    #         "pattern": pattern
-    #     }
-    #     self.client.publish("test/start", json.dumps(params))
 
     def send_command(self, cmd: dict):
         self.client.publish("test/cmd", json.dumps(cmd))
 
-    def on_message(self, client, userdata, message):
-        msg_str = message.payload.decode()
-        try:
-            msg_json = json.loads(msg_str)
-            self.status_messages.append(msg_json)
-        except json.JSONDecodeError:
-            print("Invalid JSON message received.")
+    def on_message(self, client: mqtt.Client, userdata, message: mqtt.MQTTMessage):
+        print(f"Received message: {message.payload.decode()}")
+        # Start the test procedure when receiving the signal from the broker
+        for key in self._callbacks:
+            if message.topic == key:
+                self._callbacks[key](message.payload.decode())
 
-    def get_latest_status(self):
-        if self.status_messages:
-            return self.status_messages[-1]
-        else:
-            return None
 

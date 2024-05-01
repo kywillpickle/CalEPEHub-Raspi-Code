@@ -157,7 +157,7 @@ function updateStatusLoop() {
 
 function postStartTest() {
     gatherInputs()
-    fetch('http://camera-calepehub:5000/start_test', {
+    fetch('http://camera-calepehub.local:5000/start_test', {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',

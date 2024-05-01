@@ -26,6 +26,7 @@ class Simulator(object):
     _inst = None                  # Singleton Simulator instance
     _thread = None                # Background thread that runs the test
     status = Status.STOPPED       # Current status of the Simulator thread
+    last_ack = time.time()        # Time since last acknowlegement form the RobotController
 
     x_pos = 0                     # The current X position of the robot (# cells)
     y_pos = 1                     # The current Y position of the robot (# cells)
@@ -43,6 +44,7 @@ class Simulator(object):
         simulator = object.__new__(cls)
         # init background simulation thread
         cls._thread = threading.Thread(target=simulator._sim_loop)
+        MqttBroker.get_inst().subscribe_to_topic("test/robot_status", simulator.receive_status)
 
         return simulator
     
@@ -58,7 +60,7 @@ class Simulator(object):
     def start_test(self, grid_size, step_time, num_trials, pattern):
         self.stop_test()
         # Wait for thread to close
-        while self.status != Status.STOPPED: time.sleep(0)
+        while self.status != Status.STOPPED: time.sleep(0.01)
         self.x_pos = 0
         self.y_pos = grid_size[1]
         self.width = grid_size[0]
@@ -77,21 +79,25 @@ class Simulator(object):
                 self.status = Status.STOPPING
         return
     
+    def receive_status(self, status: dict):
+        self.last_ack = status["time"]
+        if self.status == Status.RUNNING_SENDING: self.status = Status.RUNNING_RECEIVED
+
     def _move_to(self, x, y):
         # Calculate and send command
         with self._lock: # Ensure atomicity
             if self.status == Status.STOPPING: return
             self.path(x, y)
         # Wait for update
-        # while self.status == Status.RUNNING_SENDING: time.sleep(0)
+        while self.status == Status.RUNNING_SENDING: time.sleep(0)
         # Wait for one complete step
-        end_step = time.time() + self.step
-        while time.time() < end_step: time.sleep(0)
+        end_step = self.last_ack + self.step
+        while Status.RUNNING_RECEIVED and time.time() < end_step: time.sleep(0)
     
     def _sim_loop(self):
         if self.pattern == Pattern.UP_AND_DOWN:
             for x in range(0, self.width):
-                         #    Go forwards...           Then backwards
+                #        Go forwards...                       Then backwards
                 for y in list(range(self.height-1, -1, -1)) + list(range(1, self.height)):
                     self._move_to(x, y)
         elif self.pattern == Pattern.ALTERNATE:
